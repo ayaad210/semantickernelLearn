@@ -1,0 +1,295 @@
+You are my senior .NET and AI mentor.
+
+I want to build a small learning project using Cursor only. Do not use GSD.
+
+Project name:
+AI Tool-Using Knowledge Assistant
+
+Main goal:
+Build a simple .NET Console application that teaches me the important AI concepts through working code, especially the difference between:
+
+1. Using OpenAI as a normal language model that understands a prompt and returns text.
+2. Using OpenAI as a tool-calling model that selects a tool and asks the application to execute an operation.
+3. The difference between the model requesting an operation and the application actually executing it.
+4. How this concept is similar to an AI assistant requesting a Kubernetes operation such as listing pods, while another application or tool server executes the actual kubectl command.
+
+Important constraints:
+
+- Use a normal .NET Console application.
+- Use C#.
+- Prefer .NET 10 if the installed SDK supports it; otherwise use the latest suitable installed .NET version.
+- Do not build a web application.
+- Do not use ASP.NET Core.
+- Do not use Kubernetes, Docker, microservices, or frontend code in this project.
+- Do not make the project dependent on Azure.
+- The project must support both:
+  - OpenAI directly
+  - Azure OpenAI
+- The provider must be switchable through configuration.
+- Use a small and simple example instead of real infrastructure.
+- Do not execute arbitrary shell commands.
+- Do not execute real Kubernetes commands.
+- Use safe, explicitly defined C# tools only.
+- Never expose API keys in source code.
+- Use User Secrets or environment variables.
+- Use current, supported OpenAI/Semantic Kernel APIs. Do not invent APIs.
+- Before adding a package or using an API that may have changed, verify the current official documentation.
+- Keep the code simple and understandable.
+- Do not over-engineer the project.
+- Do not add unnecessary design patterns, dependency injection frameworks, databases, or infrastructure.
+- Explain the concept before implementing each major step.
+- Work incrementally and wait for my confirmation before moving to the next milestone.
+- Do not modify many files at once without explaining the changes first.
+
+The application should simulate a small task-management system using in-memory data.
+
+Example tasks:
+
+1. Fix login bug - Pending
+2. Deploy new version - In Progress
+3. Update documentation - Completed
+
+The application should eventually expose safe tools such as:
+
+- ListTasks()
+- GetTaskById(int id)
+- CreateTask(string title)
+- CompleteTask(int id)
+- CalculateRemainingDays(int totalDays, int usedDays)
+- SearchDocuments(string query)
+
+For operations that modify data, such as CreateTask or CompleteTask:
+
+- The model must only request the tool call.
+- The application must display the requested operation.
+- The user must confirm before execution.
+- The application executes the C# method only after confirmation.
+- The result is then sent back to the model.
+- The model produces the final natural-language response.
+
+Do not create a generic RunShellCommand tool.
+
+Learning roadmap:
+
+Milestone 1 — Basic Chat
+
+Teach and implement:
+
+- LLM
+- Prompt
+- System message
+- User message
+- Assistant message
+- Chat history
+- Model response
+- Basic model configuration
+
+The first version should simply send a user question to OpenAI or Azure OpenAI and print the response.
+
+Milestone 2 — Manual Tool Calling
+
+Teach the complete tool-calling flow:
+
+User question
+→ Model response
+→ Tool call request
+→ Application reads the tool name and arguments
+→ Application executes the C# method
+→ Application sends the tool result back to the model
+→ Model returns the final answer
+
+Use ListTasks and CalculateRemainingDays first.
+
+Show the raw tool-call request in the console so I can understand what the model requested.
+
+Explain clearly:
+
+- The model does not execute C# code.
+- The model does not directly access the operating system.
+- The application executes the function.
+- The model only decides which available tool may be useful and provides arguments.
+- Tool calling is not the same as giving the model unrestricted access to the machine.
+
+Milestone 3 — Safe Write Operations
+
+Add:
+
+- CreateTask
+- CompleteTask
+
+Add a confirmation step before modifying data.
+
+Demonstrate the difference between:
+
+- Read-only tool
+- Write tool
+- Tool permission
+- User confirmation
+- Tool execution result
+
+Milestone 4 — Semantic Kernel
+
+Introduce Semantic Kernel only after the manual tool-calling flow is understood.
+
+Explain what Semantic Kernel provides:
+
+- AI service integration
+- Plugins
+- Function calling
+- Chat history
+- Tool organization
+- Agent-related capabilities
+
+Refactor the project gradually to use Semantic Kernel where it improves understanding.
+
+Do not hide the underlying tool-calling flow completely. I should still understand what happens behind the abstraction.
+
+Milestone 5 — Local Documents and RAG
+
+Add a small Documents folder containing simple text files, for example:
+
+- leave-policy.txt
+- company-rules.txt
+- technical-notes.txt
+
+Implement a basic RAG pipeline:
+
+Documents
+→ Text chunks
+→ Embeddings
+→ Vector store
+→ Semantic search
+→ Relevant text
+→ Chat model
+→ Grounded answer
+
+Teach:
+
+- Embedding
+- Vector
+- Vector store
+- Chunking
+- Similarity search
+- Semantic search
+- RAG
+- Grounded answer
+- Hallucination
+
+Use the simplest suitable local vector-store option. Avoid introducing a complicated external database unless it is necessary.
+
+The application should answer questions based on the local documents and clearly indicate when the answer is not found in the documents.
+
+Milestone 6 — Agent Behavior
+
+Create a simple agent-like workflow that can perform multiple steps.
+
+Example:
+
+User:
+"Read the leave policy and calculate how many days remain if I used 5 days."
+
+Expected flow:
+
+1. Search the relevant document.
+2. Read the annual leave balance.
+3. Call CalculateRemainingDays.
+4. Return the final answer.
+
+Explain the difference between:
+
+- Chat model
+- Tool-using model
+- Workflow
+- Agent
+- Agentic system
+
+Do not claim that every multi-step workflow is automatically a fully autonomous agent. Explain the distinction accurately.
+
+Milestone 7 — MCP Concept
+
+Explain MCP using the Kubernetes example as a reference:
+
+AI client
+→ MCP protocol
+→ MCP server
+→ Tools or resources
+→ Actual system
+
+Clarify:
+
+- MCP is a standard way to expose tools and resources to AI clients.
+- MCP itself does not magically grant permissions.
+- The MCP server executes operations according to its implementation and permissions.
+- Kubernetes is only an example; our project should not connect to a real Kubernetes cluster.
+
+If implementing MCP would make the project unnecessarily complicated, explain the concept and create a small optional demonstration only after the main project is complete.
+
+Provider requirements:
+
+The code should support a provider abstraction similar to:
+
+IChatService
+
+Possible implementations:
+
+- OpenAI chat service
+- Azure OpenAI chat service
+
+Configuration should allow switching providers without changing the application logic.
+
+Use configuration examples such as:
+
+For OpenAI:
+
+Provider=OpenAI
+Model=gpt-4o-mini
+ApiKey=...
+Endpoint=...
+
+For Azure OpenAI:
+
+Provider=AzureOpenAI
+DeploymentName=gpt-4o-mini
+Endpoint=https://<resource-name>.openai.azure.com/
+ApiKey=...
+
+Do not hardcode secrets.
+
+Expected project structure should remain simple, for example:
+
+AIKnowledgeAssistant/
+├── Program.cs
+├── Models/
+├── Services/
+├── Tools/
+├── Data/
+│   └── Documents/
+├── Configuration/
+└── README.md
+
+Do not create all files immediately. Create only what is needed for the current milestone.
+
+For every milestone, follow this process:
+
+1. Explain the concept in simple terms.
+2. Explain how it relates to the Kubernetes/tool-execution example.
+3. Explain the planned implementation.
+4. List the files that will be created or changed.
+5. Show the packages required and why.
+6. Ask for my confirmation.
+7. Only after confirmation, implement the milestone.
+8. Explain the important code sections.
+9. Show how to run and test it.
+10. Mention common errors and how to troubleshoot them.
+11. Do not continue automatically to the next milestone.
+
+Start now with:
+
+- A concise overview of the final project.
+- The final architecture.
+- The complete learning roadmap.
+- The exact first milestone.
+- Recommended project creation command.
+- Required packages for Milestone 1 only.
+
+Do not write the implementation yet. Wait for my confirmation.

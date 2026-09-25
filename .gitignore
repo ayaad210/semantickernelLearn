@@ -1,0 +1,15 @@
+# Secrets — copy appsettings.example.json to appsettings.json locally
+AIKnowledgeAssistant/appsettings.json
+
+# Build output
+**/bin/
+**/obj/
+
+# Visual Studio / Cursor
+.vs/
+*.user
+*.suo
+
+# OS
+Thumbs.db
+.DS_Store

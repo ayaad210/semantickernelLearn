@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="AIKnowledgeAssistant/AIKnowledgeAssistant.csproj" />
+  <Project Path="semanticKernelLearn/semanticKernelLearn.csproj" />
+</Solution>
