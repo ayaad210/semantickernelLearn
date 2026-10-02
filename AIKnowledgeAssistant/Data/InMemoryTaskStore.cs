@@ -3,7 +3,7 @@ using AIKnowledgeAssistant.Models;
 
 namespace AIKnowledgeAssistant.Data;
 
-// In-memory tasks — no database. The LLM never touches this object directly.
+// In-memory tasks. Only C# methods here change data — never the LLM directly.
 public sealed class InMemoryTaskStore
 {
     private readonly List<TaskItem> _tasks =
@@ -13,7 +13,6 @@ public sealed class InMemoryTaskStore
         new(3, "Update documentation", Models.TaskStatus.Completed)
     ];
 
-    // Called by our C# tool executor when the model requests ListTasks.
     public string ListTasks()
     {
         var builder = new StringBuilder();
@@ -25,7 +24,32 @@ public sealed class InMemoryTaskStore
         return builder.ToString().TrimEnd();
     }
 
-    // Simple math tool — model passes numbers; we compute in C#.
     public int CalculateRemainingDays(int totalDays, int usedDays) =>
         totalDays - usedDays;
+
+    // Write operation — Milestone 3 calls this only after user confirms.
+    public string CreateTask(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return "Error: title cannot be empty.";
+        }
+
+        int newId = _tasks.Count == 0 ? 1 : _tasks.Max(t => t.Id) + 1;
+        _tasks.Add(new TaskItem(newId, title.Trim(), Models.TaskStatus.Pending));
+        return $"Created task {newId}: {title.Trim()} (Pending)";
+    }
+
+    // Write operation — sets status to Completed.
+    public string CompleteTask(int id)
+    {
+        TaskItem? task = _tasks.FirstOrDefault(t => t.Id == id);
+        if (task is null)
+        {
+            return $"Error: no task with id {id}.";
+        }
+
+        task.Status = Models.TaskStatus.Completed;
+        return $"Completed task {id}: {task.Title}";
+    }
 }

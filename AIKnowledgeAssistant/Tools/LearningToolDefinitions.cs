@@ -2,49 +2,61 @@ using OpenAI.Chat;
 
 namespace AIKnowledgeAssistant.Tools;
 
-// =============================================================================
-// Tool DEFINITIONS (what the model is allowed to request)
-// =============================================================================
-//
-// ChatTool — SDK type that describes one callable function for the model.
-//   - Sent to Azure on every chat request inside ChatCompletionOptions.Tools
-//   - The model reads name + description + parameter schema
-//   - The model does NOT run this code; it only returns a ChatToolCall later
-//
-// ChatTool.CreateFunctionTool(...) — builds that description from:
-//   - functionName:     must match a case in LearningToolExecutor (e.g. "ListTasks")
-//   - functionDescription: helps the model decide WHEN to use the tool
-//   - functionParameters: JSON Schema for arguments (optional if no args)
-//
-// K8s analogy: this file is like publishing "allowed operations" (list pods, get logs).
-//              It is not running kubectl — just declaring what exists.
-// =============================================================================
+// ChatTool definitions — menu for the model. Write tools need user confirmation in the executor.
 public static class LearningToolDefinitions
 {
-    // Use constants so definition names and executor switch stay in sync.
     public const string ListTasksName = "ListTasks";
     public const string CalculateRemainingDaysName = "CalculateRemainingDays";
+    public const string CreateTaskName = "CreateTask";
+    public const string CompleteTaskName = "CompleteTask";
 
-    // All tools we register with the API for this milestone.
+    // Read-only: run immediately. Write: ask user before C# changes data.
+    public static bool RequiresUserConfirmation(string functionName) =>
+        functionName is CreateTaskName or CompleteTaskName;
+
     public static IReadOnlyList<ChatTool> All { get; } =
     [
-        // Tool with no parameters — empty object schema is implied when omitted.
         ChatTool.CreateFunctionTool(
             functionName: ListTasksName,
-            functionDescription: "List all tasks in the in-memory task store with id, title, and status."),
+            functionDescription: "List all tasks with id, title, and status. Read-only."),
 
-        // Tool with parameters — model must return JSON matching this schema in FunctionArguments.
         ChatTool.CreateFunctionTool(
             functionName: CalculateRemainingDaysName,
-            functionDescription: "Calculate remaining days as totalDays minus usedDays.",
+            functionDescription: "Calculate remaining days as totalDays minus usedDays. Read-only.",
             functionParameters: BinaryData.FromBytes("""
                 {
                   "type": "object",
                   "properties": {
-                    "totalDays": { "type": "integer", "description": "Total days available" },
-                    "usedDays": { "type": "integer", "description": "Days already used" }
+                    "totalDays": { "type": "integer" },
+                    "usedDays": { "type": "integer" }
                   },
                   "required": ["totalDays", "usedDays"]
+                }
+                """u8.ToArray())),
+
+        ChatTool.CreateFunctionTool(
+            functionName: CreateTaskName,
+            functionDescription: "Create a new task with the given title. Requires user approval before running.",
+            functionParameters: BinaryData.FromBytes("""
+                {
+                  "type": "object",
+                  "properties": {
+                    "title": { "type": "string", "description": "Task title" }
+                  },
+                  "required": ["title"]
+                }
+                """u8.ToArray())),
+
+        ChatTool.CreateFunctionTool(
+            functionName: CompleteTaskName,
+            functionDescription: "Mark a task as Completed by id. Requires user approval before running.",
+            functionParameters: BinaryData.FromBytes("""
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer", "description": "Task id" }
+                  },
+                  "required": ["id"]
                 }
                 """u8.ToArray()))
     ];

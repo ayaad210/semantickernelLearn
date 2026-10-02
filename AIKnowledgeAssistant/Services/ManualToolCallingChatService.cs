@@ -41,6 +41,7 @@ namespace AIKnowledgeAssistant.Services;
 //        return text to user
 //
 // The model never executes C#. Only your LearningToolExecutor does.
+// Milestone 3: write tools (CreateTask, CompleteTask) ask the human y/n inside the executor.
 // =============================================================================
 public sealed class ManualToolCallingChatService
 {
@@ -76,11 +77,12 @@ public sealed class ManualToolCallingChatService
 
         _messages = [new SystemChatMessage(systemPrompt)];
 
-        // Attach ChatTool menu to every completion request in this session.
-        _options = new ChatCompletionOptions
+        // Register every ChatTool from LearningToolDefinitions.All (read + write).
+        _options = new ChatCompletionOptions();
+        foreach (ChatTool tool in LearningToolDefinitions.All)
         {
-            Tools = { LearningToolDefinitions.All[0], LearningToolDefinitions.All[1] }
-        };
+            _options.Tools.Add(tool);
+        }
     }
 
     public string DeploymentName { get; }

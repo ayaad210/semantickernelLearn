@@ -1,6 +1,6 @@
 namespace AIKnowledgeAssistant.Models;
 
-// One row in our fake task-management system (Milestone 2 demo data).
+// One task row in memory. Status can change when CompleteTask runs (after user approval).
 public sealed class TaskItem
 {
     public TaskItem(int id, string title, TaskStatus status)
@@ -14,5 +14,5 @@ public sealed class TaskItem
 
     public string Title { get; }
 
-    public TaskStatus Status { get; }
+    public TaskStatus Status { get; set; }
 }

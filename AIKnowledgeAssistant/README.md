@@ -2,9 +2,13 @@
 
 A small .NET Console learning project for AI concepts: chat, tool calling, RAG, and more.
 
+## Milestone 3 — Safe Write Operations
+
+**CreateTask** and **CompleteTask** require typing **y** before C# changes data. Read tools still run immediately.
+
 ## Milestone 2 — Manual Tool Calling
 
-Chat with **ListTasks** and **CalculateRemainingDays** tools. The model requests tools; the console app runs C# and shows the raw tool call.
+**ListTasks** and **CalculateRemainingDays** — model requests tools; app runs C# and shows the raw tool call.
 
 ## Milestone 1 — Basic Chat (previous)
 

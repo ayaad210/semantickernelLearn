@@ -1,7 +1,4 @@
-﻿// Milestone 2: chat + manual tool calling (ListTasks, CalculateRemainingDays).
-//
-// Program does NOT reference ChatTool directly — that lives in:
-//   LearningToolDefinitions (ChatTool) → ManualToolCallingChatService (loop) → LearningToolExecutor (C#)
+﻿// Milestone 3: safe write tools (CreateTask, CompleteTask) with user confirmation.
 
 using AIKnowledgeAssistant.Configuration;
 using AIKnowledgeAssistant.Services;
@@ -10,9 +7,9 @@ using Microsoft.Extensions.Configuration;
 const string SystemPrompt =
     """
     You are a helpful assistant for a .NET learning project.
-    You have tools: ListTasks and CalculateRemainingDays.
-    Use ListTasks when the user asks about tasks.
-    Use CalculateRemainingDays for remaining days math.
+    Tools: ListTasks, CalculateRemainingDays (read-only).
+    CreateTask and CompleteTask change data — the user must approve before they run.
+    If a tool result says the user denied, do not claim the change happened.
     After tool results, answer in clear natural language.
     """;
 
@@ -32,14 +29,13 @@ if (string.IsNullOrWhiteSpace(aiSettings.ApiKey))
     throw new InvalidOperationException("Missing ApiKey in appsettings.json.");
 }
 
-// ManualToolCallingChatService owns ChatClient, ChatCompletionOptions.Tools, and the tool loop.
 var chatService = new ManualToolCallingChatService(aiSettings, SystemPrompt);
 
 Console.WriteLine("AI Tool-Using Knowledge Assistant");
-Console.WriteLine("Milestone 2: Manual Tool Calling");
+Console.WriteLine("Milestone 3: Safe Write Operations");
 Console.WriteLine($"Deployment: {chatService.DeploymentName}");
 Console.WriteLine($"API base URL: {chatService.ResolvedApiEndpoint}");
-Console.WriteLine("Try: 'List my tasks' or 'If I have 20 days and used 5, how many remain?'");
+Console.WriteLine("Try: 'List tasks' | 'Create task Review PR' | 'Complete task 1' (writes ask y/n)");
 Console.WriteLine("Type 'exit' to quit.");
 Console.WriteLine();
 
@@ -60,7 +56,6 @@ while (true)
 
     try
     {
-        // May call Azure multiple times if the model returns FinishReason ToolCalls.
         string assistantReply = await chatService.SendUserMessageAsync(userInput);
         Console.WriteLine();
         Console.WriteLine($"Assistant: {assistantReply}");
