@@ -66,7 +66,7 @@ public sealed class AzureOpenAiChatService : IChatService
     /// Builds Azure OpenAI v1 base URI for API-key auth.
     /// Prefer *.openai.azure.com (documented for API keys in Microsoft Learn).
     /// </summary>
-    internal static Uri NormalizeAzureEndpoint(string endpoint)
+    public static Uri NormalizeAzureEndpoint(string endpoint)
     {
         var uri = new Uri(endpoint.Trim());
         string host = uri.Host;

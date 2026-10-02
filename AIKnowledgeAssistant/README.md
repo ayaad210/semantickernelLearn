@@ -2,9 +2,13 @@
 
 A small .NET Console learning project for AI concepts: chat, tool calling, RAG, and more.
 
-## Milestone 1 — Basic Chat
+## Milestone 2 — Manual Tool Calling
 
-This version sends your messages to **Azure OpenAI / Microsoft Foundry** and prints the model response.
+Chat with **ListTasks** and **CalculateRemainingDays** tools. The model requests tools; the console app runs C# and shows the raw tool call.
+
+## Milestone 1 — Basic Chat (previous)
+
+Plain chat without tools (`AzureOpenAiChatService` remains in the repo for reference).
 
 ## Prerequisites
 
