@@ -1,28 +1,36 @@
 # semanticKernelLearn
 
-Learning project: **AI Tool-Using Knowledge Assistant** — a .NET console app for AI concepts (chat, tool calling, RAG, and more).
+Learning project: **AI Tool-Using Knowledge Assistant** — chat, manual tool calling, and Semantic Kernel in one solution.
 
-## Projects
+## Solution layout
 
-| Folder | Description |
-| --- | --- |
-| [AIKnowledgeAssistant](./AIKnowledgeAssistant/) | Main learning app (Milestone 1: basic chat with Azure OpenAI / Foundry) |
-| [semanticKernelLearn](./semanticKernelLearn/) | Empty template project (optional) |
+| Project | Run | What it demonstrates |
+| --- | --- | --- |
+| **AIKnowledgeAssistant.Core** | (library) | Shared `InMemoryTaskStore`, `AiSettings`, `TaskToolNames`, Azure endpoint helpers |
+| **AIKnowledgeAssistant.Manual** | `dotnet run --project AIKnowledgeAssistant.Manual` | OpenAI .NET SDK + **your** `FinishReason.ToolCalls` loop |
+| **AIKnowledgeAssistant.SemanticKernel** | `dotnet run --project AIKnowledgeAssistant.SemanticKernel` | **Semantic Kernel** plugins + `FunctionChoiceBehavior.Auto()` |
+
+Both console apps use the **same task store and tool names**; only orchestration differs.
+
+Open `semanticKernelLearn.slnx` in Visual Studio / Cursor.
 
 ## Setup
 
-1. Install [.NET 10 SDK](https://dotnet.microsoft.com/download).
-2. Copy `AIKnowledgeAssistant/appsettings.example.json` to `AIKnowledgeAssistant/appsettings.json`.
-3. Set your Azure **Endpoint**, **ApiKey**, and deployment **Model** name.
-4. Run:
+1. [.NET 10 SDK](https://dotnet.microsoft.com/download)
+2. Copy `appsettings.example.json` → `appsettings.json` in **each** app folder you run (Manual and/or SemanticKernel), or copy one file to both.
+3. Set Azure **Endpoint**, **ApiKey**, and deployment **Model**.
 
 ```powershell
-cd AIKnowledgeAssistant
-dotnet run
+cd c:\Users\mohamed.saied\source\repos\semanticKernelLearn
+
+dotnet run --project AIKnowledgeAssistant.Manual
+# or
+dotnet run --project AIKnowledgeAssistant.SemanticKernel
 ```
 
-Do not commit `appsettings.json` (contains API keys). It is listed in `.gitignore`.
+Do not commit `appsettings.json` (gitignored).
 
-## Roadmap
+## Docs
 
-See [notes.txt](./notes.txt) for the full milestone plan (Milestone 2: manual tool calling, etc.).
+- [MILESTONE4-SCENARIOS.md](./AIKnowledgeAssistant.SemanticKernel/MILESTONE4-SCENARIOS.md) — SK flow diagrams (Manual is the other project in the same solution)
+- [notes.txt](./notes.txt) — full milestone roadmap

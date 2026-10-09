@@ -3,7 +3,7 @@ using AIKnowledgeAssistant.Models;
 
 namespace AIKnowledgeAssistant.Data;
 
-// In-memory tasks. Only C# methods here change data — never the LLM directly.
+// Shared in-memory task store — both apps use this; each process gets its own instance.
 public sealed class InMemoryTaskStore
 {
     private readonly List<TaskItem> _tasks =
@@ -27,7 +27,6 @@ public sealed class InMemoryTaskStore
     public int CalculateRemainingDays(int totalDays, int usedDays) =>
         totalDays - usedDays;
 
-    // Write operation — Milestone 3 calls this only after user confirms.
     public string CreateTask(string title)
     {
         if (string.IsNullOrWhiteSpace(title))
@@ -40,7 +39,6 @@ public sealed class InMemoryTaskStore
         return $"Created task {newId}: {title.Trim()} (Pending)";
     }
 
-    // Write operation — sets status to Completed.
     public string CompleteTask(int id)
     {
         TaskItem? task = _tasks.FirstOrDefault(t => t.Id == id);

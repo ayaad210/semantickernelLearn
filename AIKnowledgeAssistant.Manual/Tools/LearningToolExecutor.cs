@@ -4,7 +4,6 @@ using OpenAI.Chat;
 
 namespace AIKnowledgeAssistant.Tools;
 
-// Runs tools in C#. Write tools pause for user confirmation first.
 public sealed class LearningToolExecutor
 {
     private readonly InMemoryTaskStore _taskStore = new();
@@ -18,8 +17,7 @@ public sealed class LearningToolExecutor
         string argumentsText = toolCall.FunctionArguments.ToString();
         Console.WriteLine($"Arguments (JSON): {argumentsText}");
 
-        bool isWrite = LearningToolDefinitions.RequiresUserConfirmation(toolCall.FunctionName);
-        if (isWrite)
+        if (TaskToolNames.RequiresUserConfirmation(toolCall.FunctionName))
         {
             Console.WriteLine();
             Console.WriteLine("*** WRITE tool — this would change in-memory data ***");
@@ -38,10 +36,10 @@ public sealed class LearningToolExecutor
 
         string result = toolCall.FunctionName switch
         {
-            LearningToolDefinitions.ListTasksName => _taskStore.ListTasks(),
-            LearningToolDefinitions.CalculateRemainingDaysName => ExecuteCalculateRemainingDays(argumentsText),
-            LearningToolDefinitions.CreateTaskName => ExecuteCreateTask(argumentsText),
-            LearningToolDefinitions.CompleteTaskName => ExecuteCompleteTask(argumentsText),
+            TaskToolNames.ListTasksName => _taskStore.ListTasks(),
+            TaskToolNames.CalculateRemainingDaysName => ExecuteCalculateRemainingDays(argumentsText),
+            TaskToolNames.CreateTaskName => ExecuteCreateTask(argumentsText),
+            TaskToolNames.CompleteTaskName => ExecuteCompleteTask(argumentsText),
             _ => throw new InvalidOperationException($"Unknown tool: {toolCall.FunctionName}")
         };
 

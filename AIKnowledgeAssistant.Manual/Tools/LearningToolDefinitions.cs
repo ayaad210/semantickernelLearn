@@ -2,26 +2,20 @@ using OpenAI.Chat;
 
 namespace AIKnowledgeAssistant.Tools;
 
-// ChatTool definitions — menu for the model. Write tools need user confirmation in the executor.
+// ChatTool menu for the model (Manual app). Names match TaskToolNames in Core.
 public static class LearningToolDefinitions
 {
-    public const string ListTasksName = "ListTasks";
-    public const string CalculateRemainingDaysName = "CalculateRemainingDays";
-    public const string CreateTaskName = "CreateTask";
-    public const string CompleteTaskName = "CompleteTask";
-
-    // Read-only: run immediately. Write: ask user before C# changes data.
     public static bool RequiresUserConfirmation(string functionName) =>
-        functionName is CreateTaskName or CompleteTaskName;
+        TaskToolNames.RequiresUserConfirmation(functionName);
 
     public static IReadOnlyList<ChatTool> All { get; } =
     [
         ChatTool.CreateFunctionTool(
-            functionName: ListTasksName,
+            functionName: TaskToolNames.ListTasksName,
             functionDescription: "List all tasks with id, title, and status. Read-only."),
 
         ChatTool.CreateFunctionTool(
-            functionName: CalculateRemainingDaysName,
+            functionName: TaskToolNames.CalculateRemainingDaysName,
             functionDescription: "Calculate remaining days as totalDays minus usedDays. Read-only.",
             functionParameters: BinaryData.FromBytes("""
                 {
@@ -35,7 +29,7 @@ public static class LearningToolDefinitions
                 """u8.ToArray())),
 
         ChatTool.CreateFunctionTool(
-            functionName: CreateTaskName,
+            functionName: TaskToolNames.CreateTaskName,
             functionDescription: "Create a new task with the given title. Requires user approval before running.",
             functionParameters: BinaryData.FromBytes("""
                 {
@@ -48,7 +42,7 @@ public static class LearningToolDefinitions
                 """u8.ToArray())),
 
         ChatTool.CreateFunctionTool(
-            functionName: CompleteTaskName,
+            functionName: TaskToolNames.CompleteTaskName,
             functionDescription: "Mark a task as Completed by id. Requires user approval before running.",
             functionParameters: BinaryData.FromBytes("""
                 {

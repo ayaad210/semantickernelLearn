@@ -1,5 +1,3 @@
-﻿// Milestone 3: safe write tools (CreateTask, CompleteTask) with user confirmation.
-
 using AIKnowledgeAssistant.Configuration;
 using AIKnowledgeAssistant.Services;
 using Microsoft.Extensions.Configuration;
@@ -32,10 +30,11 @@ if (string.IsNullOrWhiteSpace(aiSettings.ApiKey))
 var chatService = new ManualToolCallingChatService(aiSettings, SystemPrompt);
 
 Console.WriteLine("AI Tool-Using Knowledge Assistant");
-Console.WriteLine("Milestone 3: Safe Write Operations");
+Console.WriteLine("Project: AIKnowledgeAssistant.Manual (OpenAI SDK + hand-written tool loop)");
 Console.WriteLine($"Deployment: {chatService.DeploymentName}");
 Console.WriteLine($"API base URL: {chatService.ResolvedApiEndpoint}");
-Console.WriteLine("Try: 'List tasks' | 'Create task Review PR' | 'Complete task 1' (writes ask y/n)");
+Console.WriteLine("Shared store & settings: AIKnowledgeAssistant.Core");
+Console.WriteLine("Try: 'List tasks' | 'Create task Review PR' | 'Complete task 1'");
 Console.WriteLine("Type 'exit' to quit.");
 Console.WriteLine();
 
