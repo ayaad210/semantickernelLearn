@@ -1,10 +1,12 @@
 using AIKnowledgeAssistant.Configuration;
 using AIKnowledgeAssistant.Data;
 using AIKnowledgeAssistant.Plugins;
+using AIKnowledgeAssistant.Rag;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.Extensions.AI;
 
 namespace AIKnowledgeAssistant.Services;
 
@@ -27,6 +29,9 @@ public sealed class SemanticKernelChatService
 
     // Per-request model settings; here it enables automatic function calling.
     private readonly OpenAIPromptExecutionSettings _executionSettings;
+
+    // Milestone 5: chunks + embeddings + vector store behind the SearchDocuments tool.
+    private readonly DocumentSearchService _documentSearch;
 
     public SemanticKernelChatService(AiSettings settings, string systemPrompt)
     {
@@ -62,7 +67,23 @@ public sealed class SemanticKernelChatService
         // tool schema sent to the model (the part we wrote manually in Milestone 2).
         builder.Plugins.AddFromObject(new TaskManagementPlugin(taskStore), pluginName: "TaskManagement");
 
+        // Milestone 5 (RAG) - register a SECOND Azure deployment: the embedding model (text -> vector).
+        // Same resource and key as the chat model, different deployment name.
+        // SKEXP0010 = SK marks this (recommended, non-obsolete) API as experimental; we accept that for this one call.
+#pragma warning disable SKEXP0010
+        builder.AddAzureOpenAIEmbeddingGenerator(
+            deploymentName: settings.EmbeddingModel,
+            endpoint: azureResourceEndpoint,
+            apiKey: settings.ApiKey);
+#pragma warning restore SKEXP0010
+
+        // Build the kernel first so we can resolve the embedding service, then add the document plugin.
         _kernel = builder.Build();
+
+        // Document search = embeddings + our own vector store. Exposed to the model as the SearchDocuments tool.
+        _documentSearch = new DocumentSearchService(_kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>());
+        _kernel.Plugins.AddFromObject(new DocumentPlugin(_documentSearch), pluginName: "Documents");
+
         _chatCompletion = _kernel.GetRequiredService<IChatCompletionService>();
 
         // The system message goes in first and stays at the start of the history for the whole session.
@@ -75,6 +96,13 @@ public sealed class SemanticKernelChatService
             FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
         };
     }
+
+    // Milestone 5: RAG indexing is async (it calls Azure), so it cannot run in the constructor.
+    // Program.cs calls this once at startup, before the first question.
+    public Task IndexDocumentsAsync(string folder, CancellationToken cancellationToken = default) =>
+        _documentSearch.IndexFolderAsync(folder, cancellationToken);
+
+    public int IndexedChunkCount => _documentSearch.ChunkCount;
 
     public string DeploymentName { get; }
 

@@ -11,6 +11,10 @@ const string SystemPrompt =
     CreateTask and CompleteTask change data — the user must approve before they run.
     If a tool result says the user denied, do not claim the change happened.
     After tool results, answer in clear natural language.
+    SearchDocuments (read-only) searches local company documents (leave policy, company rules, technical notes).
+    For questions about company policies or documents, ALWAYS call SearchDocuments first and answer ONLY from
+    the returned text, mentioning the source file. If the result is NOT_FOUND or does not contain the answer,
+    say clearly that the answer was not found in the documents. Never guess policy details.
     """;
 
 // Configuration: appsettings.json first, environment variables override it (keeps secrets out of source code).
@@ -34,14 +38,20 @@ if (string.IsNullOrWhiteSpace(aiSettings.ApiKey))
 var chatService = new SemanticKernelChatService(aiSettings, SystemPrompt);
 
 // Every Console line in this file is printed by Program.cs top-level code (our own code, no SK involved).
-// Startup banner: printed once, before the first "You:" prompt.
-Console.WriteLine("AI Tool-Using Knowledge Assistant");                                                  // [Program.cs, startup]
+// Milestone 5 (RAG) indexing: documents -> chunks -> embeddings (Azure call) -> vector store. Runs once at startup.
+Console.WriteLine("Indexing documents (chunk + embed)...");                                              // [Program.cs, startup]
+await chatService.IndexDocumentsAsync(Path.Combine(AppContext.BaseDirectory, "Documents"));
+Console.WriteLine($"Indexed {chatService.IndexedChunkCount} chunks in the in-memory vector store.");       // [Program.cs, startup]
+Console.WriteLine();
+
+// Startup banner: printed once, after indexing, before the first "You:" prompt.
+Console.WriteLine("AI Tool-Using Knowledge Assistant");                                              // [Program.cs, startup]
 Console.WriteLine("Project: AIKnowledgeAssistant.SemanticKernel (plugins + auto function calling)");      // [Program.cs, startup]
 Console.WriteLine($"Deployment: {chatService.DeploymentName}");                                          // [Program.cs, startup; value comes from SemanticKernelChatService]
 Console.WriteLine($"API base URL: {chatService.ResolvedApiEndpoint}");                                   // [Program.cs, startup; value comes from SemanticKernelChatService]
 Console.WriteLine("Shared store & settings: AIKnowledgeAssistant.Core");                                 // [Program.cs, startup]
 Console.WriteLine("Compare with: AIKnowledgeAssistant.Manual (hand-written tool loop)");                 // [Program.cs, startup]
-Console.WriteLine("Try: 'List tasks' | 'Create task Review PR' | 'Complete task 1'");                   // [Program.cs, startup]
+Console.WriteLine("Try: 'List tasks' | 'Create task Review PR' | 'Complete task 1' | 'How many annual leave days do I get?'");                   // [Program.cs, startup]
 Console.WriteLine("Type 'exit' to quit.");                                                               // [Program.cs, startup]
 Console.WriteLine();                                                                                    // [Program.cs, startup spacer]
 

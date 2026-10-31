@@ -7,6 +7,9 @@ public sealed class AiSettings
 
     public string Model { get; set; } = "gpt-4o-mini";
 
+    // Azure DEPLOYMENT name of the embedding model (Milestone 5 RAG). Same resource/key as the chat model.
+    public string EmbeddingModel { get; set; } = "text-embedding-3-small";
+
     public string? Endpoint { get; set; }
 
     public string? ApiKey { get; set; }
@@ -14,6 +17,7 @@ public sealed class AiSettings
     public AiSettings Normalize()
     {
         Model = Model.Trim();
+        EmbeddingModel = EmbeddingModel.Trim();
         Endpoint = Endpoint?.Trim();
         ApiKey = ApiKey?.Trim();
 

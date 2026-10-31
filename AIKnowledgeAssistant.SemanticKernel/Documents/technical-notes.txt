@@ -1,0 +1,13 @@
+Technical Notes
+
+Deployment
+Production deployments happen every Thursday at 14:00 after the release checklist is complete.
+Every deployment needs a rollback plan and a second reviewer.
+
+Branching
+Feature branches are created from main and named feature/short-description.
+Pull requests need at least one approval and a passing build before merging.
+
+Incidents
+Production incidents must be reported in the incident channel within 15 minutes.
+A short post-incident review is written within 2 working days.

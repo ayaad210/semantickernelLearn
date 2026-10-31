@@ -33,4 +33,6 @@ Do not commit `appsettings.json` (gitignored).
 ## Docs
 
 - [MILESTONE4-SCENARIOS.md](./AIKnowledgeAssistant.SemanticKernel/MILESTONE4-SCENARIOS.md) — SK flow diagrams (Manual is the other project in the same solution)
+- [EXECUTION-FLOW.md](./AIKnowledgeAssistant.SemanticKernel/EXECUTION-FLOW.md) — who calls what / who prints each console line
+- [MILESTONE5-RAG-STEPS.md](./AIKnowledgeAssistant.SemanticKernel/MILESTONE5-RAG-STEPS.md) — RAG: ordered steps, changes, concepts (SemanticKernel project; Milestone 4 state tagged `milestone-4-semantic-kernel`)
 - [notes.txt](./notes.txt) — full milestone roadmap
