@@ -2,93 +2,91 @@ using AIKnowledgeAssistant.Configuration;
 using AIKnowledgeAssistant.Services;
 using Microsoft.Extensions.Configuration;
 
-// System message: sets the assistant's role and rules. It is the first message in the chat history.
-// It tells the model which tools are read-only vs. write, and how to behave when the user denies a write.
+// ============================================================
+// Program.cs = the starting point. It does 4 things:
+//   1. Reads the settings (endpoint, key, model names)
+//   2. Creates the chat service (all Semantic Kernel code is inside it)
+//   3. Indexes the documents (the "R" in RAG: prepare the search)
+//   4. Runs a loop: read a question -> get an answer -> print it
+// ============================================================
+
+// The system prompt = the rules we give the model before the user says anything.
+// It tells the model what tools exist and when to use them.
 const string SystemPrompt =
     """
-    You are a helpful assistant for a .NET learning project.
-    Tools: ListTasks, CalculateRemainingDays (read-only).
-    CreateTask and CompleteTask change data — the user must approve before they run.
-    If a tool result says the user denied, do not claim the change happened.
-    After tool results, answer in clear natural language.
-    SearchDocuments (read-only) searches local company documents (leave policy, company rules, technical notes).
+    You are a helpful assistant with these tools:
+    - Task tools (ListTasks, CreateTask, CompleteTask) to read and change tasks.
+    - SearchDocuments to search local company documents (leave policy, company rules, technical notes).
+    - CalculateRemainingDays to subtract used days from a total.
     For questions about company policies or documents, ALWAYS call SearchDocuments first and answer ONLY from
     the returned text, mentioning the source file. If the result is NOT_FOUND or does not contain the answer,
-    say clearly that the answer was not found in the documents. Never guess policy details.
+    say clearly that it was not found in the documents. Never guess policy details.
+    Some questions need several steps. Example: "I used 5 leave days, how many remain?"
+    Step 1: call SearchDocuments to find the annual leave balance.
+    Step 2: call CalculateRemainingDays with that balance and the days used. Do not do the math yourself.
+    Step 3: answer with the result and the source file.
+    After tool results, answer in clear natural language.
     """;
 
-// Configuration: appsettings.json first, environment variables override it (keeps secrets out of source code).
+// Step 1: read settings from appsettings.json.
+// Environment variables are added last, so they can override the file (useful to keep keys out of the code).
 var configuration = new ConfigurationBuilder()
     .SetBasePath(AppContext.BaseDirectory)
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile("appsettings.json", optional: false)
     .AddEnvironmentVariables()
     .Build();
 
-var aiSettings = configuration.GetSection(AiSettings.SectionName).Get<AiSettings>()
-    ?? throw new InvalidOperationException($"Missing '{AiSettings.SectionName}' configuration section.");
+// Turn the "Ai" section of the file into an AiSettings object.
+var settings = configuration.GetSection(AiSettings.SectionName).Get<AiSettings>()
+    ?? throw new InvalidOperationException($"Missing '{AiSettings.SectionName}' section in appsettings.json.");
 
-aiSettings.Normalize();
-
-if (string.IsNullOrWhiteSpace(aiSettings.ApiKey))
+// Stop early with a clear message if the connection details are missing.
+if (string.IsNullOrWhiteSpace(settings.ApiKey) || string.IsNullOrWhiteSpace(settings.Endpoint))
 {
-    throw new InvalidOperationException("Missing ApiKey in appsettings.json.");
+    throw new InvalidOperationException("Set Ai:Endpoint and Ai:ApiKey in appsettings.json.");
 }
 
-// All Semantic Kernel wiring (kernel, plugin, filter, chat history) happens inside this one service.
-var chatService = new SemanticKernelChatService(aiSettings, SystemPrompt);
+// Step 2: create the service that talks to the model.
+var chatService = new SemanticKernelChatService(settings, SystemPrompt);
 
-// Every Console line in this file is printed by Program.cs top-level code (our own code, no SK involved).
-// Milestone 5 (RAG) indexing: documents -> chunks -> embeddings (Azure call) -> vector store. Runs once at startup.
-Console.WriteLine("Indexing documents (chunk + embed)...");                                              // [Program.cs, startup]
+// Step 3: RAG indexing. It runs once at startup:
+//   read files -> cut into chunks -> turn each chunk into numbers (embedding) -> keep them in memory.
+Console.WriteLine("Indexing documents...");
 await chatService.IndexDocumentsAsync(Path.Combine(AppContext.BaseDirectory, "Documents"));
-Console.WriteLine($"Indexed {chatService.IndexedChunkCount} chunks in the in-memory vector store.");       // [Program.cs, startup]
+Console.WriteLine($"Indexed {chatService.IndexedChunkCount} chunks.");
 Console.WriteLine();
+Console.WriteLine("Semantic Kernel + RAG demo");
+Console.WriteLine("Try: 'List tasks' | 'Create task Review PR' | 'How many annual leave days do I get?'");
+Console.WriteLine("Multi-step: 'Read the leave policy and tell me how many days remain if I used 5 days.'");
+Console.WriteLine("Type 'exit' to quit.");
 
-// Startup banner: printed once, after indexing, before the first "You:" prompt.
-Console.WriteLine("AI Tool-Using Knowledge Assistant");                                              // [Program.cs, startup]
-Console.WriteLine("Project: AIKnowledgeAssistant.SemanticKernel (plugins + auto function calling)");      // [Program.cs, startup]
-Console.WriteLine($"Deployment: {chatService.DeploymentName}");                                          // [Program.cs, startup; value comes from SemanticKernelChatService]
-Console.WriteLine($"API base URL: {chatService.ResolvedApiEndpoint}");                                   // [Program.cs, startup; value comes from SemanticKernelChatService]
-Console.WriteLine("Shared store & settings: AIKnowledgeAssistant.Core");                                 // [Program.cs, startup]
-Console.WriteLine("Compare with: AIKnowledgeAssistant.Manual (hand-written tool loop)");                 // [Program.cs, startup]
-Console.WriteLine("Try: 'List tasks' | 'Create task Review PR' | 'Complete task 1' | 'How many annual leave days do I get?'");                   // [Program.cs, startup]
-Console.WriteLine("Type 'exit' to quit.");                                                               // [Program.cs, startup]
-Console.WriteLine();                                                                                    // [Program.cs, startup spacer]
-
-// Simple REPL: read a question, let the service handle model + tool calls, print the final answer.
-// Tool-call details (function, arguments, y/n prompt, result) are printed by SkToolVisibilityFilter in between.
+// Step 4: the chat loop. It repeats until the user types "exit".
 while (true)
 {
-    // [Program.cs, loop start] prompt shown before every question (also reappears after the tool-call logs + answer)
-    Console.Write("You: ");
-    // [Program.cs] waits for the user's question; "exit" ends the loop
-    string? userInput = Console.ReadLine();
+    Console.Write("\nYou: ");
+    string? input = Console.ReadLine();
 
-    if (string.IsNullOrWhiteSpace(userInput))
+    // Ignore empty lines.
+    if (string.IsNullOrWhiteSpace(input))
     {
         continue;
     }
 
-    if (userInput.Equals("exit", StringComparison.OrdinalIgnoreCase))
+    if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
     {
         break;
     }
 
     try
     {
-        // While this await runs, SK may call SkToolVisibilityFilter (see its prints: "--- SK auto function call", "Function:", ...).
-        // Those lines appear BEFORE the "Assistant:" line below, because the final text only exists after all tool calls finish.
-        string assistantReply = await chatService.SendUserMessageAsync(userInput);
-        Console.WriteLine();                                       // [Program.cs, after the whole model+tool round finished] spacer
-        Console.WriteLine($"Assistant: {assistantReply}");         // [Program.cs] the model's FINAL natural-language answer
-        Console.WriteLine();                                       // [Program.cs] spacer
+        // Send the question. If the model uses a tool, FunctionCallLogger prints
+        // [tool call] and [tool result] lines here, before the final answer.
+        string reply = await chatService.SendUserMessageAsync(input);
+        Console.WriteLine($"\nAssistant: {reply}");
     }
     catch (Exception ex)
     {
-        Console.WriteLine();                                       // [Program.cs, only if SendUserMessageAsync threw] spacer
-        Console.WriteLine($"Error: {ex.Message}");                 // [Program.cs] e.g. bad API key, wrong deployment name, network error
-        Console.WriteLine();                                       // [Program.cs] spacer
+        // Typical causes: wrong key, wrong deployment name, no network.
+        Console.WriteLine($"\nError: {ex.Message}");
     }
 }
-
-Console.WriteLine("Goodbye.");                                     // [Program.cs, after typing 'exit']
